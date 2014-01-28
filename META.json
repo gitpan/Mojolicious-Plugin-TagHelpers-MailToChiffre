@@ -6,7 +6,7 @@
    "dynamic_config" : 1,
    "generated_by" : "ExtUtils::MakeMaker version 6.82, CPAN::Meta::Converter version 2.120351",
    "license" : [
-      "unknown"
+      "perl_5"
    ],
    "meta-spec" : {
       "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
@@ -32,8 +32,8 @@
       },
       "runtime" : {
          "requires" : {
-            "Mojolicious" : "3.93",
-            "Mojolicious::Plugin::Util::RandomString" : "0.03",
+            "Mojolicious" : "4.69",
+            "Mojolicious::Plugin::Util::RandomString" : "0.04",
             "perl" : "5.010001"
          }
       }
@@ -47,5 +47,5 @@
          "url" : "https://github.com/Akron/Mojolicious-Plugin-TagHelpers-MailToChiffre"
       }
    },
-   "version" : "0.01"
+   "version" : "0.02"
 }

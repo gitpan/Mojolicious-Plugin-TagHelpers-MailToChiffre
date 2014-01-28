@@ -12,9 +12,10 @@ WriteMakefile(
   BUILD_REQUIRES => {
     'Test::More' => 0
   },
+  LICENSE      => 'perl',
   PREREQ_PM => {
-    'Mojolicious' => 3.93,
-    'Mojolicious::Plugin::Util::RandomString' => 0.03
+    'Mojolicious' => 4.69,
+    'Mojolicious::Plugin::Util::RandomString' => 0.04
     },
   META_MERGE   => {
     requires  => { perl => '5.010001' },

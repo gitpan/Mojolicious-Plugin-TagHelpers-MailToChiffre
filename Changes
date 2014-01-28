@@ -1,3 +1,7 @@
+0.02 2014-01-28
+        - Fixed M::P::Util::RandomString dependency.
+	- Fixed Test::Mojo dependency.
+
 0.01 2014-01-25
         - Initial submission to GitHub.
         - Initial submission to CPAN.

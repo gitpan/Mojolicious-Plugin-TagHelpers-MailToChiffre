@@ -4,7 +4,7 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Mojo::URL;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 # Cache for generated CSS and JavaScript
 has [qw/js css/];
@@ -446,6 +446,7 @@ Mojolicious::Plugin::TagHelpers::MailToChiffre - Obfuscate Email Addresses in Te
   # Add fallback for non-JavaScript users
   get('/contactme')->mail_to_chiffre(cb => sub {
     my $c = shift;
+    # Of course - don't display it this way:
     $c->render(text => 'You tried to ' . $c->stash('mail_to_chiffre')->to_string);
   });
 
@@ -483,13 +484,11 @@ It uses JavaScript to obfuscate mailto-links (while providing
 a fallback option for users without JavaScript)
 and in case you want to show the email
 address in plain text it is obfuscated using CSS.
-
 Although modern spam bots may be capable of parsing and executing
 JavaScript and interpreting CSS, it is more likely,
 that they don't try to do it, as it takes time and power
 better be invested in sites with less protected emails.
 This is just my assumption for the moment - it may not held entirely true.
-
 The idea is to make the obfuscation easy for modern browser
 and expensive for spam bots, by making it necessary to parse
 and execute CSS and JavaScript without giving too much hints,
