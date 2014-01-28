@@ -38,7 +38,7 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "license" : [
          "http://www.opensource.org/licenses/artistic-license-2.0"
@@ -47,5 +47,5 @@
          "url" : "https://github.com/Akron/Mojolicious-Plugin-TagHelpers-MailToChiffre"
       }
    },
-   "version" : "0.02"
+   "version" : "0.02_1"
 }

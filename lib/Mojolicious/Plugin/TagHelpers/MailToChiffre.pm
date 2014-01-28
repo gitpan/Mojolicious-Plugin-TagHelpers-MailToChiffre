@@ -4,7 +4,7 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Mojo::URL;
 
-our $VERSION = '0.02';
+our $VERSION = '0.02_1';
 
 # Cache for generated CSS and JavaScript
 has [qw/js css/];
@@ -63,7 +63,10 @@ sub register {
       $p->remove('sid');
 
       # Something went wrong
-      return unless $host && $account;
+      unless ($host && $account) {
+	$c->app->log->warn('Path doesn\'t contain a valid email address');
+	return;
+      };
 
       # Create url
       my $url = Mojo::URL->new;

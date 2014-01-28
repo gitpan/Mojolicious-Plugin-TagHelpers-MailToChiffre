@@ -56,6 +56,7 @@ my $chiffre_as_expected = sub {
 
   # Create anchor tag
   my $a = $app->mail_to_chiffre($address, %param);
+  ok($a, 'mail_to_chiffre returns a string');
 
   # Get the url
   my $span = Mojo::DOM->new($a);
@@ -67,7 +68,15 @@ my $chiffre_as_expected = sub {
     is($mail, $address, 'CSS obfuscation as expected');
   };
 
-  my $href = $span->at('a')->attr('href');
+  my $href;
+  my $anchor = $span->at('a');
+  ok($a, 'Found anchor');
+  if ($anchor) {
+    $href = $anchor->attr('href');
+  }
+  else {
+    diag "Unable to find anchor in [$a]"
+  };
 
   like($href, qr!^/test/[-a-zA-Z0-9]+?/[-a-zA-Z0-9]+?\?!, $desc . ' (URL)');
   like($href, qr!sid=[-a-zA-Z0-9]+?!, $desc . ' (SID)');
