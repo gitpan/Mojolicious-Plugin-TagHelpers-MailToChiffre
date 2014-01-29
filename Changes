@@ -1,4 +1,4 @@
-0.02_3 2014-01-29
+0.03 2014-01-29
         - Fixed ByteStream stringification bug in tests.
 
 0.02 2014-01-28
