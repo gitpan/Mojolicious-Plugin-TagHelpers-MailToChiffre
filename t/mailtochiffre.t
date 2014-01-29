@@ -44,6 +44,11 @@ $app->routes->get('/test')->mail_to_chiffre(
   }
 );
 
+ok(Mojo::DOM->new('<a href="/test/GYXvEWFdOwDlxOZSDU/-40n-17-53-52-40-45-55-26-46-38-49?sid=-55-24-38-44-53" rel="nofollow" onclick="return fNiNhmFtmdFXGZLsrVeoyGI(this,false)"><span>su.oicilojos</span><span>UDSZOxlDwOdFWEvXYG</span>norka</a>')->at('a'), 'Mojo::DOM works');
+
+ok(Mojo::DOM->new(b('<a href="/test/GYXvEWFdOwDlxOZSDU/-40n-17-53-52-40-45-55-26-46-38-49?sid=-55-24-38-44-53" rel="nofollow" onclick="return fNiNhmFtmdFXGZLsrVeoyGI(this,false)"><span>su.oicilojos</span><span>UDSZOxlDwOdFWEvXYG</span>norka</a>'))->at('a'), 'Mojo::DOM works with bytestreams');
+
+
 my $chiffre_as_expected = sub {
   my $t = shift;
   my $address = shift;
@@ -66,6 +71,9 @@ my $chiffre_as_expected = sub {
     $mail = $mail->split('')->reverse->join('')->to_string;
 
     is($mail, $address, 'CSS obfuscation as expected');
+  }
+  else {
+    ok(0, 'The css obfuscation didn\'t work');
   };
 
   my $href;
