@@ -46,7 +46,7 @@ $app->plugin('TagHelpers::MailToChiffre' => {
   method_name => $method_name
 });
 
-my $a = $app->mail_to_chiffre('akron@batteriehuhn.de');
+my $a = $app->mail_to_chiffre('akron@batteriehuhn.de')->to_string;
 $a = Mojo::DOM->new($a)->at('a');
 like($a->attr('href'), qr/^javascript:/, 'No fallback route');
 like($a->attr('onclick'), qr/^return true;/, 'No fallback route');

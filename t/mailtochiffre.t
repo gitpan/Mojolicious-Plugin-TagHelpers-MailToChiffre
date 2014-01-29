@@ -44,11 +44,6 @@ $app->routes->get('/test')->mail_to_chiffre(
   }
 );
 
-ok(Mojo::DOM->new('<a href="/test/GYXvEWFdOwDlxOZSDU/-40n-17-53-52-40-45-55-26-46-38-49?sid=-55-24-38-44-53" rel="nofollow" onclick="return fNiNhmFtmdFXGZLsrVeoyGI(this,false)"><span>su.oicilojos</span><span>UDSZOxlDwOdFWEvXYG</span>norka</a>')->at('a'), 'Mojo::DOM works');
-
-ok(Mojo::DOM->new(b('<a href="/test/GYXvEWFdOwDlxOZSDU/-40n-17-53-52-40-45-55-26-46-38-49?sid=-55-24-38-44-53" rel="nofollow" onclick="return fNiNhmFtmdFXGZLsrVeoyGI(this,false)"><span>su.oicilojos</span><span>UDSZOxlDwOdFWEvXYG</span>norka</a>'))->at('a'), 'Mojo::DOM works with bytestreams');
-
-
 my $chiffre_as_expected = sub {
   my $t = shift;
   my $address = shift;
@@ -60,7 +55,7 @@ my $chiffre_as_expected = sub {
   local $Test::Builder::Level = $Test::Builder::Level + 1;
 
   # Create anchor tag
-  my $a = $app->mail_to_chiffre($address, %param);
+  my $a = $app->mail_to_chiffre($address, %param)->to_string;
   ok($a, 'mail_to_chiffre returns a string');
 
   # Get the url
