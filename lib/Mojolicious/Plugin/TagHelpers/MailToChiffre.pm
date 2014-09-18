@@ -4,118 +4,104 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Mojo::URL;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 # Cache for generated CSS and JavaScript
-has [qw/js css/];
-
+has [qw/js css pattern_rotate assets/];
 
 # Register Plugin
 sub register {
-  my ($plugin, $mojo, $plugin_param) = @_;
+  my ($plugin, $app, $plugin_param) = @_;
 
   # Load random string plugin with specific profile
-  $mojo->plugin('Util::RandomString' => {
+  $app->plugin('Util::RandomString' => {
     mail_to_chiffre => {
       alphabet => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
       entropy => 128
     }
   });
 
+  delete $plugin->{js};
+  delete $plugin->{css};
+  delete $plugin->{assets};
+
   # Load parameters from Config file
-  if (my $config_param = $mojo->config('TagHelpers-MailToChiffre')) {
+  if (my $config_param = $app->config('TagHelpers-MailToChiffre')) {
     $plugin_param = { %$config_param, %$plugin_param };
   };
 
   # Generate method name in case it is not given
-  my $method_name = $plugin_param->{method_name} // $mojo->random_string('mail_to_chiffre');
+  my $method_name = $plugin_param->{method_name} // $app->random_string('mail_to_chiffre');
 
   # Set pattern shift in case it is not given
   my $pattern_rotate = 2;
   if ($plugin_param->{pattern_rotate} && $plugin_param->{pattern_rotate} =~ /^\d+$/) {
     $pattern_rotate = $plugin_param->{pattern_rotate};
   };
+  $plugin->pattern_rotate($pattern_rotate);
+
+  # Create asset object
+  $plugin->assets(Mojolicious::Plugin::TagHelpers::MailToChiffre::Assets->new);
 
   # Add pseudo condition for manipulating the stash for the fallback
-  my $routes = $mojo->routes;
-  $routes->add_condition(
-    _mail_to_chiffre => sub {
-      my ($route, $c, $captures) = @_;
-      my $xor = $captures->{xor};
-      my $p = $c->req->url->query;
-
-      # Set header for searc engines
-      $c->res->headers->header('X-Robots-Tag' => 'noindex,nofollow');
-
-      # Deobfuscate host
-      my $host = $plugin->to_string(
-	$captures->{host},
-	$xor,
-	$pattern_rotate
-      );
-
-      # Deobfuscate account
-      my $account = $plugin->to_string(
-	scalar $p->param('sid'),
-	$xor,
-	$pattern_rotate
-      );
-      $p->remove('sid');
-
-      # Something went wrong
-      unless ($host && $account) {
-	$c->app->log->warn('Path doesn\'t contain a valid email address');
-	return;
-      };
-
-      # Create url
-      my $url = Mojo::URL->new;
-      $url->scheme('mailto');
-      $url->path($account . '@' . $host);
-
-      # Deobfuscate further address parameters
-      foreach my $type (qw/to cc bcc/) {
-	if (my @val = $p->param($type)) {
-
-	  # Delete obfuscated parameters
-	  $p->remove($type);
-
-	  # Append new deobfuscated parameters
-	  $p->append($type => [map {
-	    $plugin->to_string(
-	      $_,
-	      $xor,
-	      $pattern_rotate
-	    )
-	  } @val]);
-	};
-      };
-
-      $url->query->merge($p);
-
-      # Store the deobfuscated mail in the stash
-      $c->stash(mail_to_chiffre => $url);
-
-      return 1;
-    }
-  );
-
+  my $routes = $app->routes;
 
   # Add fallback shortcut
   $routes->add_shortcut(
     mail_to_chiffre => sub {
-      shift->route('/:xor/:host')
-	   ->name('mailToChiffre')
-	   ->over('_mail_to_chiffre')
-	   ->to(@_);
+      my $r = shift;
+
+      state $name = 'mailToChiffre';
+
+      # In case method name is given, set asset paths
+      if ($plugin_param->{method_name}) {
+
+	# Styles
+	$r->get('/style.css')->to(
+	  cb => sub {
+	    my $c = shift;
+	    $c->render(
+	      text   => $c->mail_to_chiffre_css,
+	      format => 'css'
+	    );
+	  }
+	)->name($name . 'CSS');
+
+	# Styles
+	$r->get('/script.js')->to(
+	  cb => sub {
+	    my $c = shift;
+	    $c->render(
+	      text   => $c->mail_to_chiffre_js,
+	      format => 'js'
+	    );
+	  }
+	)->name($name . 'JS');
+
+	# Set assets
+	$plugin->assets->scripts( $app->url_for('mailToChiffreJS')  );
+	$plugin->assets->styles(  $app->url_for('mailToChiffreCSS') );
+      };
+
+      # Fallback path
+      $r->under('/:xor/:host')->to(
+	cb => sub {
+	  $plugin->_chiffre_to_mail(shift)
+	}
+      )->get('/')->name($name)->to(@_);
     }
   );
 
 
   # Add obfuscation tag helper
-  $mojo->helper(
+  $app->helper(
     mail_to_chiffre => sub {
       my $c = shift;
+
+      unless (@_) {
+	return $plugin->assets;
+      };
+
       my $address = shift;
 
       # Create one time pad
@@ -133,6 +119,9 @@ sub register {
       my $obf_address = b($address)->xml_escape->split('@');
       my $account = $obf_address->first;
       my $host = $obf_address->slice(1 .. $obf_address->size - 1)->join('@');
+
+      # Reget the pattern rotate (maybe)
+      my $pattern_rotate = $plugin->pattern_rotate;
 
       # Obfuscate address parts
       $host = $plugin->to_sequence(
@@ -188,19 +177,17 @@ sub register {
       };
 
       # Create anchor link
-      my $str = '<a href="' . $address_path . '" ';
-      $str .= 'rel="nofollow" ';
-      $str .= 'onclick="';
+      my $str = qq!<a href="$address_path" rel="nofollow" onclick="!;
       $str .= 'return true;' if $no_fallback;
       $str .= 'return ' . $method_name . '(this,false)';
 
       # Obfuscate display string using css
       unless ($text) {
 	my ($pre, @post) = split('@', reverse($address));
-	$str .= '">';
-	$str .= "<span>" . b($pre)->xml_escape . "</span>";
-	$str .= '<span>' . b($xor)->split('')->reverse->join . '</span>';
-	$str .= c(@post)->join->xml_escape;
+	$str .= '">' .
+	        '<span>' . b($pre)->xml_escape . '</span>' .
+	        '<span>' . b($xor)->split('')->reverse->join . '</span>' .
+		c(@post)->join->xml_escape;
       }
       else {
 	$str .= ';' . int(rand(50)) . '">' . $text->();
@@ -213,7 +200,7 @@ sub register {
   );
 
   # Create css code helper
-  $mojo->helper(
+  $app->helper(
     mail_to_chiffre_css => sub {
       return $plugin->css if $plugin->css;
       my $css = qq!a[onclick\$='return $method_name(this,false)']!;
@@ -227,7 +214,7 @@ sub register {
 
 
   # Create javascript code helper
-  $mojo->helper(
+  $app->helper(
     mail_to_chiffre_js => sub {
       my $c = shift;
 
@@ -245,7 +232,7 @@ sub register {
       };
 
       # Obfuscate pattern rotate
-      my $factor_pattern_rotate = _factorize($pattern_rotate, $v{pow});
+      my $factor_pattern_rotate = _factorize($plugin->pattern_rotate, $v{pow});
 
       # Create javascript code
       my $js = qq!function ${method_name}($v{obj},$v{bool}){
@@ -300,6 +287,67 @@ sub register {
       return $plugin->js;
     }
   );
+};
+
+
+sub _chiffre_to_mail {
+  my ($plugin, $c) = @_;
+  my $xor = $c->stash('xor');
+  my $p = $c->req->url->query;
+
+  # Set header for searc engines
+  $c->res->headers->header('X-Robots-Tag' => 'noindex,nofollow');
+
+  # Deobfuscate host
+  my $host = $plugin->to_string(
+    $c->stash('host'),
+    $xor,
+    $plugin->pattern_rotate
+  );
+
+  # Deobfuscate account
+  my $account = $plugin->to_string(
+    scalar $p->param('sid'),
+    $xor,
+    $plugin->pattern_rotate
+  );
+  $p->remove('sid');
+
+  # Something went wrong
+  unless ($host && $account) {
+    $c->app->log->warn('Path doesn\'t contain a valid email address');
+    return;
+  };
+
+  # Create url
+  my $url = Mojo::URL->new;
+  $url->scheme('mailto');
+  $url->path($account . '@' . $host);
+
+  # Deobfuscate further address parameters
+  foreach my $type (qw/to cc bcc/) {
+    if (my @val = $p->param($type)) {
+
+      # Delete obfuscated parameters
+      $p->remove($type);
+
+      # Append new deobfuscated parameters
+      $p->append($type => [map {
+	$plugin->to_string(
+	  $_,
+	  $xor,
+	  $plugin->pattern_rotate
+	)
+      } @val]);
+    };
+  };
+
+  $url->query->merge($p);
+
+  # Store the deobfuscated mail in the stash
+  $c->stash(mail_to_chiffre => $url);
+
+  return 1;
 };
 
 
@@ -420,6 +468,12 @@ sub to_sequence {
 
   return $str;
 };
+
+
+package Mojolicious::Plugin::TagHelpers::MailToChiffre::Assets;
+use Mojo::Base -base;
+
+has [qw/scripts styles/];
 
 
 1;
@@ -572,7 +626,7 @@ Accepts the attributes C<method_name> and C<pattern_rotate>.
 
 The C<method_name> is the name of the JavaScript function called to deobfuscate
 your email addresses. It defaults to a random string.
-The C<pattern_rotate> numeral value will rotate the characters ob the obfuscated
+The C<pattern_rotate> numeral value will rotate the characters of the obfuscated
 email address and is stored directly in the javascript.
 It default to C<2>.
 In case both parameters are set, the resulting JavaScript and
@@ -603,6 +657,30 @@ C<to>, C<cc> and C<bcc> links are obfuscated, too.
 In case the helper embeds further HTML, this is used for the link content,
 otherwise the first email address is used obfuscated as the link text.
 
+In case no email address is passed to the C<mail_to_chiffre> method, an assets
+object is returned, bundling all style and script assets (in case a fixed method name
+was provided on registration) for use in the
+L<AssetPack|Mojolicious::Plugin::AssetPack> pipeline.
+The assets object provides to methods, C<scripts> and C<styles>.
+
+  # Register MailToChiffre plugin
+  plugin 'TagHelpers::MailToChiffre' => {
+    method_name => 'deobfuscate'
+  };
+
+  # Register AssetPack plugin
+  plugin 'AssetPack';
+
+  # Add MailToChiffre assets to pipeline
+  app->asset('myApp.js'  => 'myscripts.coffee', app->mail_to_chiffre->scripts);
+  app->asset('myApp.css' => 'mystyles.scss', app->mail_to_chiffre->styles);
+
+  %# In templates embed assets ...
+  %= asset 'myApp.js'
+  %= asset 'myApp.css'
+
+B<The asset helper option is experimental and may change without warnings!>
+
 
 =head2 mail_to_chiffre_css
 
@@ -626,7 +704,7 @@ Returns the deobfuscating JavaScript code.
 
   # Mojolicious
   my $r = $app->routes;
-  $r->route('/contactme')->mail_to_chiffre('Mail#capture');
+  $r->get('/contactme')->mail_to_chiffre('Mail#capture');
 
   # Mojolicious::Lite
   any('/contactme')->mail_to_chiffre(

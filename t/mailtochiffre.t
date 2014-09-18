@@ -37,7 +37,9 @@ sub url_to_sort {
   $s .= '?' . join('&' , sort map( $_ . '=' . (ref $x->{$_} ? join(',', @{$x->{$_}}) : $x->{$_}), keys %$x ) );
 };
 
-$app->routes->get('/test')->mail_to_chiffre(
+my $path = 'test';
+
+$app->routes->get('/' . $path)->mail_to_chiffre(
   cb => sub {
     my $c = shift;
     return $c->render(text => 'Found: ' . url_to_sort($c->stash('mail_to_chiffre')));
@@ -81,7 +83,7 @@ my $chiffre_as_expected = sub {
     diag "Unable to find anchor in [$a]"
   };
 
-  like($href, qr!^/test/[-a-zA-Z0-9]+?/[-a-zA-Z0-9]+?\?!, $desc . ' (URL)');
+  like($href, qr!^/$path/[-a-zA-Z0-9]+?/[-a-zA-Z0-9]+?\?!, $desc . ' (URL)');
   like($href, qr!sid=[-a-zA-Z0-9]+?!, $desc . ' (SID)');
 
   foreach (qw/to cc bcc/) {
@@ -112,10 +114,10 @@ $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 7');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 7');
 
-
 # New start
+$app = Mojolicious->new;
 $t = Test::Mojo->new;
-$app = $t->app;
+$t->app($app);
 
 $method_name = 'deobfuscate';
 
@@ -131,7 +133,8 @@ $js = $app->mail_to_chiffre_js;
 like($js, qr/^function $method_name\(/, 'js is as expected');
 like($js, qr/\(3,2\)/, 'pattern shift is as expected');
 
-$app->routes->get('/testnew')->mail_to_chiffre(
+$path = 'testnew';
+$app->routes->get('/' . $path)->mail_to_chiffre(
   cb => sub {
     my $c = shift;
     return $c->render(text => 'Found: ' . url_to_sort($c->stash('mail_to_chiffre')));
@@ -141,6 +144,22 @@ $app->routes->get('/testnew')->mail_to_chiffre(
 $t->$chiffre_as_expected('akron@sojolicio.us', 'Chiffre 1');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 7');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 7');
+
+is($app->mail_to_chiffre->styles, '/testnew/style.css', 'Found css path');
+is($app->mail_to_chiffre->scripts, '/testnew/script.js', 'Found js path');
+
+$t->get_ok($app->mail_to_chiffre->styles)
+  ->status_is(200)
+  ->content_type_is('text/css')
+  ->content_like(qr/$method_name/)
+  ->content_like(qr/^a\[onclick/);
+
+$t->get_ok($app->mail_to_chiffre->scripts)
+  ->status_is(200)
+  ->content_type_is('application/javascript')
+  ->content_like(qr/^function $method_name/)
+  ->content_like(qr/\(3,2\)/);
+
 
 done_testing;
 

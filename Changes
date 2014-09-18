@@ -1,3 +1,8 @@
+0.04 2014-09-18
+        - Small documentation fixes.
+	- Improved test suite.
+	- Added experimental support for AssetPack.
+
 0.03 2014-01-29
         - Fixed ByteStream stringification bug in tests.
 
