@@ -111,8 +111,8 @@ $t->$chiffre_as_expected('akron@sojolicio.us', to => 'ä@test.com', 'Chiffre 4')
 $t->$chiffre_as_expected('akron@sojolicio.us', cc => 'ä@test.com', 'Chiffre 5');
 $t->$chiffre_as_expected('akron@sojolicio.us', bcc => 'ä@test.com', 'Chiffre 6');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', 'Chiffre 7');
-$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 7');
-$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 7');
+$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 8');
+$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 9');
 
 # New start
 $app = Mojolicious->new;
@@ -141,25 +141,9 @@ $app->routes->get('/' . $path)->mail_to_chiffre(
   }
 );
 
-$t->$chiffre_as_expected('akron@sojolicio.us', 'Chiffre 1');
-$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 7');
-$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 7');
-
-is($app->mail_to_chiffre->styles, '/testnew/style.css', 'Found css path');
-is($app->mail_to_chiffre->scripts, '/testnew/script.js', 'Found js path');
-
-$t->get_ok($app->mail_to_chiffre->styles)
-  ->status_is(200)
-  ->content_type_is('text/css')
-  ->content_like(qr/$method_name/)
-  ->content_like(qr/^a\[onclick/);
-
-$t->get_ok($app->mail_to_chiffre->scripts)
-  ->status_is(200)
-  ->content_type_is('application/javascript')
-  ->content_like(qr/^function $method_name/)
-  ->content_like(qr/\(3,2\)/);
-
+$t->$chiffre_as_expected('akron@sojolicio.us', 'Chiffre 2.1');
+$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 2.2');
+$t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 2.3');
 
 done_testing;
 

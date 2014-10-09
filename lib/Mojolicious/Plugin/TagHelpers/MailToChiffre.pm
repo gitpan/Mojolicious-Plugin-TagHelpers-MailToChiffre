@@ -4,10 +4,10 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Mojo::URL;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 # Cache for generated CSS and JavaScript
-has [qw/js css pattern_rotate assets/];
+has [qw/js css pattern_rotate/];
 
 # Register Plugin
 sub register {
@@ -23,7 +23,6 @@ sub register {
 
   delete $plugin->{js};
   delete $plugin->{css};
-  delete $plugin->{assets};
 
   # Load parameters from Config file
   if (my $config_param = $app->config('TagHelpers-MailToChiffre')) {
@@ -39,9 +38,6 @@ sub register {
     $pattern_rotate = $plugin_param->{pattern_rotate};
   };
   $plugin->pattern_rotate($pattern_rotate);
-
-  # Create asset object
-  $plugin->assets(Mojolicious::Plugin::TagHelpers::MailToChiffre::Assets->new);
 
   # Add pseudo condition for manipulating the stash for the fallback
   my $routes = $app->routes;
@@ -77,10 +73,6 @@ sub register {
 	    );
 	  }
 	)->name($name . 'JS');
-
-	# Set assets
-	$plugin->assets->scripts( $app->url_for('mailToChiffreJS')  );
-	$plugin->assets->styles(  $app->url_for('mailToChiffreCSS') );
       };
 
       # Fallback path
@@ -97,10 +89,6 @@ sub register {
   $app->helper(
     mail_to_chiffre => sub {
       my $c = shift;
-
-      unless (@_) {
-	return $plugin->assets;
-      };
 
       my $address = shift;
 
@@ -326,7 +314,7 @@ sub _chiffre_to_mail {
 
   # Deobfuscate further address parameters
   foreach my $type (qw/to cc bcc/) {
-    if (my @val = $p->param($type)) {
+    if (my @val = @{$p->every_param($type)}) {
 
       # Delete obfuscated parameters
       $p->remove($type);
@@ -468,12 +456,6 @@ sub to_sequence {
 
   return $str;
 };
-
-
-package Mojolicious::Plugin::TagHelpers::MailToChiffre::Assets;
-use Mojo::Base -base;
-
-has [qw/scripts styles/];
 
 
 1;
@@ -629,8 +611,6 @@ your email addresses. It defaults to a random string.
 The C<pattern_rotate> numeral value will rotate the characters of the obfuscated
 email address and is stored directly in the javascript.
 It default to C<2>.
-In case both parameters are set, the resulting JavaScript and
-CSS can be used in external files or directly in your Asset Pipeline.
 
 All parameters can be set either on registration or
 as part of the configuration file with the key C<TagHelpers-MailToChiffre>.
@@ -656,30 +636,6 @@ C<to>, C<cc> and C<bcc> links are obfuscated, too.
 
 In case the helper embeds further HTML, this is used for the link content,
 otherwise the first email address is used obfuscated as the link text.
-
-In case no email address is passed to the C<mail_to_chiffre> method, an assets
-object is returned, bundling all style and script assets (in case a fixed method name
-was provided on registration) for use in the
-L<AssetPack|Mojolicious::Plugin::AssetPack> pipeline.
-The assets object provides to methods, C<scripts> and C<styles>.
-
-  # Register MailToChiffre plugin
-  plugin 'TagHelpers::MailToChiffre' => {
-    method_name => 'deobfuscate'
-  };
-
-  # Register AssetPack plugin
-  plugin 'AssetPack';
-
-  # Add MailToChiffre assets to pipeline
-  app->asset('myApp.js'  => 'myscripts.coffee', app->mail_to_chiffre->scripts);
-  app->asset('myApp.css' => 'mystyles.scss', app->mail_to_chiffre->styles);
-
-  %# In templates embed assets ...
-  %= asset 'myApp.js'
-  %= asset 'myApp.css'
-
-B<The asset helper option is experimental and may change without warnings!>
 
 
 =head2 mail_to_chiffre_css

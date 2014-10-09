@@ -32,7 +32,7 @@
       },
       "runtime" : {
          "requires" : {
-            "Mojolicious" : "5.01",
+            "Mojolicious" : "5.48",
             "Mojolicious::Plugin::Util::RandomString" : "0.04",
             "perl" : "5.010001"
          }
@@ -47,5 +47,5 @@
          "url" : "https://github.com/Akron/Mojolicious-Plugin-TagHelpers-MailToChiffre"
       }
    },
-   "version" : "0.04"
+   "version" : "0.05"
 }
