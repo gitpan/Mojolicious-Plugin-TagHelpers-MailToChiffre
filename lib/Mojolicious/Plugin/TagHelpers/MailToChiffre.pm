@@ -4,7 +4,7 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Mojo::URL;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 # Cache for generated CSS and JavaScript
 has [qw/js css pattern_rotate/];
@@ -192,7 +192,7 @@ sub register {
     mail_to_chiffre_css => sub {
       return $plugin->css if $plugin->css;
       my $css = qq!a[onclick\$='return $method_name(this,false)']!;
-      $css = $css . '{direction:rtl;unicode-bidi:bidi-override}' .
+      $css = $css . '{direction:rtl;unicode-bidi:bidi-override;text-align:left}'.
 	     $css . '>span:nth-child(1n+2){display:none}' .
 	     $css . '>span:nth-child(1):after{content:\'@\'}';
       $plugin->css(b($css));
@@ -264,7 +264,7 @@ sub register {
       if($v{regex}.\$1=='sid')
         $v{param_array}.push('to='+$v{to_seq}($v{regex}.\$2)+'\@'+$v{to_seq}($v{path_array}\[2\]));
       else $v{param_array}.push($v{regex}.\$1+'='+$v{to_seq}($v{regex}.\$2));
-    }else $v{param_array}.push($v{temp})
+    }else $v{param_array}.push($v{temp}.replace(/\\+/g,' '))
   }
   location.href='ma'+$v{url}+'to:?'+$v{param_array}.join('&');
   return false
