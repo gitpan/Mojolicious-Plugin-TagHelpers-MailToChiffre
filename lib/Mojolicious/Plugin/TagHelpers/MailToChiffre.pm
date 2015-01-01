@@ -4,7 +4,7 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Mojo::URL;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 # Cache for generated CSS and JavaScript
 has [qw/js css pattern_rotate/];
@@ -90,7 +90,7 @@ sub register {
     mail_to_chiffre => sub {
       my $c = shift;
 
-      my $address = shift;
+      my $address = shift or return b('');
 
       # Create one time pad
       my $xor = substr($c->random_string('mail_to_chiffre'), 0, length($address));
@@ -136,15 +136,31 @@ sub register {
 
       # Encrypt certain mail parameters
       foreach (qw/to cc bcc/) {
+
+	# No parameter
 	next unless exists $param{$_};
+
+	# Parameter invalid
+	unless ($param{$_}) {
+	  delete $param{$_};
+	  next;
+	};
 
 	# Array for this parameter
 	if (ref $param{$_}) {
 	  my @temp;
 	  foreach (@{$param{$_}}) {
-	    push(@temp, $plugin->to_sequence($_, $xor, $pattern_rotate));
+	    push(@temp, $plugin->to_sequence($_, $xor, $pattern_rotate)) if $_;
 	  };
-	  $param{$_} = \@temp;
+
+	  # Check if there are converted parameters
+	  if (@temp) {
+	    $param{$_} = \@temp;
+	  }
+	  # Remove parameter from list
+	  else {
+	    delete $param{$_};
+	  };
 	}
 
 	# Single value
@@ -436,6 +452,8 @@ sub to_string {
 sub to_sequence {
   shift;
   my ($s, $k, $p) = @_;
+
+  # _xor is not allowed to be null
   my $src = _rotate(_xor($s, $k), $p);
   my $str;
 

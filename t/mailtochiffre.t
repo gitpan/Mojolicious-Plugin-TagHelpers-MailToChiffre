@@ -145,6 +145,18 @@ $t->$chiffre_as_expected('akron@sojolicio.us', 'Chiffre 2.1');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 2.2');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 2.3');
 
+is($app->mail_to_chiffre('', subject => 'Hi!')->to_string, '', 'Return nothing');
+my $failed_cc = $app->mail_to_chiffre('akron@sojolicio.us', subject => 'Hi!', cc => '')->to_string;
+unlike($failed_cc, qr/&cc=/,    'No cc 1');
+like($failed_cc, qr/&subject=/, 'No cc 2');
+like($failed_cc, qr/norka/,     'No cc 3');
+
+$failed_cc = $app->mail_to_chiffre('akron@sojolicio.us', subject => 'Hi!', cc => [])->to_string;
+unlike($failed_cc, qr/&cc=/,    'No cc 4');
+like($failed_cc, qr/&subject=/, 'No cc 5');
+like($failed_cc, qr/norka/,     'No cc 6');
+
+
 done_testing;
 
 __END__

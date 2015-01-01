@@ -1,3 +1,6 @@
+0.07 2015-01-01
+        - Fixed failure treatment.
+
 0.06 2014-11-30
         - Improved css.
 	- Modified js to replace + with spaces.
