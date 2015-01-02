@@ -1,3 +1,6 @@
+0.08 2015-01-02
+        - Fixed test suite regarding parameter order.
+
 0.07 2015-01-01
         - Fixed failure treatment.
 
