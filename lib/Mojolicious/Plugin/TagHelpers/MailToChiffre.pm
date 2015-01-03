@@ -4,7 +4,7 @@ use Mojo::ByteStream 'b';
 use Mojo::Collection 'c';
 use Mojo::URL;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 # Cache for generated CSS and JavaScript
 has [qw/js css pattern_rotate/];
@@ -174,14 +174,14 @@ sub register {
       };
 
       # Return path
-      my $address_path = $url->query({ sid => $account, %param })->to_abs;
+      $url->query({sid => $account, %param});
 
       if ($no_fallback) {
-	$address_path = qq!javascript:$method_name(false,'$address_path')!;
+	$url = qq!javascript:$method_name(false,'$url')!;
       };
 
       # Create anchor link
-      my $str = qq!<a href="$address_path" rel="nofollow" onclick="!;
+      my $str = qq!<a href="$url" rel="nofollow" onclick="!;
       $str .= 'return true;' if $no_fallback;
       $str .= 'return ' . $method_name . '(this,false)';
 
@@ -346,7 +346,7 @@ sub _chiffre_to_mail {
     };
   };
 
-  $url->query->merge($p);
+  $url->query->append($p);
 
   # Store the deobfuscated mail in the stash
   $c->stash(mail_to_chiffre => $url);

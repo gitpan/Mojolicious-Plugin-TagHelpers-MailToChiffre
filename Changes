@@ -1,3 +1,7 @@
+0.09 2015-01-03
+        - Fixed parameter handling in Mojo::URL >= 5.71.
+	- Update minimum version of Mojolicious to 5.71.
+
 0.08 2015-01-02
         - Fixed test suite regarding parameter order.
 

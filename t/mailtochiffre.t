@@ -58,6 +58,7 @@ my $chiffre_as_expected = sub {
 
   # Create anchor tag
   my $a = $app->mail_to_chiffre($address, %param)->to_string;
+
   ok($a, 'mail_to_chiffre returns a string');
 
   # Get the url
@@ -95,6 +96,7 @@ my $chiffre_as_expected = sub {
   my $url = Mojo::URL->new;
   $url->scheme('mailto');
   $url->path($address);
+
   $url->query(%param);
   my $norm = url_to_sort($url);
 
@@ -105,13 +107,17 @@ my $chiffre_as_expected = sub {
 };
 
 $t->$chiffre_as_expected('akron@sojolicio.us', 'Chiffre 1');
+
 $t->$chiffre_as_expected('äkrön@sojolicio.us', 'Chiffre 2');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', 'Chiffre 3');
 $t->$chiffre_as_expected('akron@sojolicio.us', to => 'ä@test.com', 'Chiffre 4');
 $t->$chiffre_as_expected('akron@sojolicio.us', cc => 'ä@test.com', 'Chiffre 5');
 $t->$chiffre_as_expected('akron@sojolicio.us', bcc => 'ä@test.com', 'Chiffre 6');
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', 'Chiffre 7');
+
+
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', to => 'ä@test.com', bcc => ['hihi@test.com','ü@wow.com'], 'Chiffre 8');
+
 $t->$chiffre_as_expected('akron@sojolicio.us', subject => 'Hi!', cb => sub { 'test' }, 'Chiffre 9');
 
 # New start

@@ -18,10 +18,10 @@ no_index:
     - t
     - inc
 requires:
-  Mojolicious: '5.48'
+  Mojolicious: '5.71'
   Mojolicious::Plugin::Util::RandomString: '0.04'
   perl: '5.010001'
 resources:
   license: http://www.opensource.org/licenses/artistic-license-2.0
   repository: https://github.com/Akron/Mojolicious-Plugin-TagHelpers-MailToChiffre
-version: '0.08'
+version: '0.09'
